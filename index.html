@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>Inventario Oratorio Garelli 2026</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
 <link rel="icon" href="LOGO_ORATORIO.jpeg">
 <!-- FIREBASE CORRECTO -->
@@ -144,29 +145,34 @@ th {
 .fila-rojo {
     box-shadow: inset 6px 0 0 red;
 }
-.input-group {
+.input-pass {
     position: relative;
     width: 90%;
     margin: auto;
 }
 
-.input-group input {
+.input-pass input {
     width: 100%;
     padding: 10px;
-    padding-right: 60px;
+    padding-right: 40px;
     border-radius: 8px;
     border: 1px solid #ccc;
 }
 
-.toggle-password {
+.input-pass i {
     position: absolute;
     right: 10px;
     top: 50%;
     transform: translateY(-50%);
     cursor: pointer;
-    font-size: 13px;
-    color: #007bff;
-    user-select: none;
+    color: #555;
+    font-size: 18px;
+    transition: 0.3s;
+}
+
+.input-pass i:hover {
+    color: #000;
+    transform: translateY(-50%) scale(1.1);
 }
 </style>
 </head>
@@ -178,9 +184,11 @@ th {
     <div class="login-box">
         <h2>Login</h2>
         <input type="text" id="user" placeholder="Usuario" onkeypress="if(event.key==='Enter') document.getElementById('pass').focus()">
-        <div class="input-group">
-    <input type="password" id="pass" placeholder="Contraseña" onkeypress="if(event.key==='Enter') login()">
-    <span class="toggle-password" onclick="verPass()">Ver</span>
+       <div class="input-pass">
+    <input type="password" id="pass" placeholder="Contraseña"
+        onkeypress="if(event.key==='Enter') login()">
+
+    <i class="fa-solid fa-eye" id="iconoPass" onclick="verPass()"></i>
 </div>
         <button onclick="login()">Ingresar</button>
         <p id="error" style="color:red;"></p>
