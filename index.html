@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Inventario Oratorio Garelli 2026</title>
+
+<link rel="icon" href="LOGO_ORATORIO.jpeg">
+<!-- FIREBASE CORRECTO -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBrzcO_br-r9txjAjEXq550Lw4_-cHRZoY",
+  authDomain: "inventario-garelli-10de4.firebaseapp.com",
+  databaseURL: "https://inventario-garelli-10de4-default-rtdb.firebaseio.com",
+  projectId: "inventario-garelli-10de4",
+  storageBucket: "inventario-garelli-10de4.firebasestorage.app",
+  messagingSenderId: "939752690065",
+  appId: "1:939752690065:web:38fc9f589cbdfbe896ca30",
+  measurementId: "G-6674LX9C30"
+};
+
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+window.db = db;
+window.ref = ref;
+window.push = push;
+window.onValue = onValue;
+window.remove = remove;
+window.update = update;
+</script>
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial;
+    background: #dbeeff;
+}
+
+/* LOGIN */
+#login {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.login-box {
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0px 0px 15px rgba(0,0,0,0.2);
+    text-align: center;
+}
+
+/* INPUTS */
+input, select {
+    padding: 8px;
+    margin: 5px;
+    width: 90%;
+}
+
+/* BOTONES */
+button {
+    padding: 8px;
+    margin-top: 10px;
+    cursor: pointer;
+}
+
+/* HEADER */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #4da6ff;
+    padding: 10px;
+    position: relative;
+}
+
+.header h1 {
+    flex: 1;
+    text-align: center;
+    color: white;
+}
+
+/* LOGO */
+.logo {
+    position: absolute;
+    left: 10px;
+    top: 10px;
+    width: 110px;
+    border-radius: 50%;
+}
+
+/* LOGOUT */
+.logout {
+    background: red;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 8px;
+    width: auto;
+}
+
+/* CONTENIDO */
+.container {
+    padding: 20px;
+}
+
+/* FORM */
+.form {
+    background: white;
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 10px;
+}
+
+/* TABLA */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+th, td {
+    border: 1px solid #ccc;
+    padding: 8px;
+    text-align: center;
+}
+
+th {
+    background: #4da6ff;
+    color: white;
+}
+
+/* SOMBRA IZQUIERDA */
+.fila-verde {
+    box-shadow: inset 6px 0 0 green;
+}
+
+.fila-rojo {
+    box-shadow: inset 6px 0 0 red;
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div id="login">
+    <div class="login-box">
+        <h2>Login</h2>
+        <input type="text" id="user" placeholder="Usuario" onkeypress="if(event.key==='Enter') document.getElementById('pass').focus()">
+        <input type="password" id="pass" placeholder="Contraseña" onkeypress="if(event.key==='Enter') login()">
+        <button onclick="verPass()">👁️</button>
+        <button onclick="login()">Ingresar</button>
+        <p id="error" style="color:red;"></p>
+    </div>
+</div>
+
+
+<!-- APP -->
+<div id="app" style="display:none;">
+    <div class="header">
+        <img src="LOGO_ORATORIO.jpeg" class="logo">
+        <h1><b>INVENTARIO ORATORIO GARELLI 2026</b></h1>
+        <button class="logout" onclick="logout()">Cerrar sesión</button>
+    </div>
+
+    <div class="container">
+
+        <div class="form">
+            <input id="nombre" placeholder="Nombre producto">
+            <input id="cantidad" type="number" placeholder="Cantidad">
+
+            <select id="categoria">
+                <option>Deportes</option>
+                <option>Alimentos</option>
+                <option>Instrumentos</option>
+                <option>Otros</option>
+            </select>
+
+            <select id="estado">
+                <option>Nuevo</option>
+                <option>Viejo</option>
+            </select>
+
+            <select id="completo">
+                <option>Completo</option>
+                <option>Incompleto</option>
+            </select>
+
+            <input id="obs" placeholder="Observación">
+
+            <button onclick="agregar()">Agregar</button>
+        </div>
+
+        <input id="buscar" placeholder="Buscar..." onkeyup="mostrar()">
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Cantidad</th>
+                    <th>Categoría</th>
+                    <th>Estado</th>
+                    <th>Inventario</th>
+                    <th>Observación</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="tabla"></tbody>
+        </table>
+
+    </div>
+</div>
+
+<script>
+
+let rol = "";
+let datos = {};
+let editId = null;
+
+fetch("datos.json")
+.then(res => res.json())
+.then(data => {
+
+    onValue(ref(db, "inventario"), (snapshot) => {
+
+        if(!snapshot.exists()){
+            data.forEach(d => {
+                push(ref(db, "inventario"), d);
+            });
+
+            console.log("Datos subidos a Firebase ✅");
+        }
+
+    }, { onlyOnce: true });
+
+});
+
+function verPass(){
+    let pass = document.getElementById("pass");
+
+    if(pass.type === "password"){
+        pass.type = "text";
+    } else {
+        pass.type = "password";
+    }
+}
+
+/* LOGIN */
+function login(){
+    let u = user.value;
+    let p = pass.value;
+
+    if(u === "LAU" && p === "2026"){
+        rol = "admin";
+    } else if(u === "USER" && p === "1234"){
+        rol = "usuario";
+    } else {
+        error.innerText = "Datos incorrectos";
+        return;
+    }
+
+    loginDiv = document.getElementById("login");
+    appDiv = document.getElementById("app");
+
+    loginDiv.style.display = "none";
+    appDiv.style.display = "block";
+
+    cargarDatos();
+}
+
+/* CARGAR DESDE FIREBASE */
+function cargarDatos(){
+    const dbRef = ref(db, "inventario");
+
+    onValue(dbRef, (snapshot) => {
+        datos = snapshot.val() || {};
+        mostrar();
+    });
+}
+
+/* AGREGAR */
+function agregar(){
+    let nuevo = {
+        nombre: nombre.value,
+        cantidad: cantidad.value,
+        categoria: categoria.value,
+        estado: estado.value,
+        completo: completo.value,
+        obs: obs.value
+    };
+
+    if(editId){
+        update(ref(db, "inventario/" + editId), nuevo);
+        editId = null;
+    } else {
+        push(ref(db, "inventario"), nuevo);
+    }
+
+    limpiar();
+}
+
+/* MOSTRAR */
+function mostrar(){
+    tabla.innerHTML = "";
+
+    Object.entries(datos).forEach(([id, d]) => {
+        tabla.innerHTML += `
+        <tr class="${d.completo === 'Completo' ? 'fila-verde' : 'fila-rojo'}">
+            <td>${d.nombre}</td>
+            <td>${d.cantidad}</td>
+            <td>${d.categoria}</td>
+            <td>${d.estado}</td>
+            <td>${d.completo}</td>
+            <td>${d.obs}</td>
+            <td>
+                <button onclick="editar('${id}')">Editar</button>
+                ${rol === "admin" ? `<button onclick="eliminar('${id}')">Eliminar</button>` : ""}
+            </td>
+        </tr>`;
+    });
+}
+
+/* EDITAR */
+function editar(id){
+    let d = datos[id];
+
+    nombre.value = d.nombre;
+    cantidad.value = d.cantidad;
+    categoria.value = d.categoria;
+    estado.value = d.estado;
+    completo.value = d.completo;
+    obs.value = d.obs;
+
+    editId = id;
+}
+
+/* ELIMINAR */
+function eliminar(id){
+    if(rol !== "admin") return;
+    remove(ref(db, "inventario/" + id));
+}
+
+/* LIMPIAR */
+function limpiar(){
+    nombre.value = "";
+    cantidad.value = "";
+    obs.value = "";
+}
+
+/* LOGOUT */
+function logout(){
+    location.reload();
+}
+
+</script>
+
+</body>
+</html>
