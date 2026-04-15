@@ -144,7 +144,30 @@ th {
 .fila-rojo {
     box-shadow: inset 6px 0 0 red;
 }
+.input-group {
+    position: relative;
+    width: 90%;
+    margin: auto;
+}
 
+.input-group input {
+    width: 100%;
+    padding: 10px;
+    padding-right: 60px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    font-size: 13px;
+    color: #007bff;
+    user-select: none;
+}
 </style>
 </head>
 
@@ -155,8 +178,10 @@ th {
     <div class="login-box">
         <h2>Login</h2>
         <input type="text" id="user" placeholder="Usuario" onkeypress="if(event.key==='Enter') document.getElementById('pass').focus()">
-        <input type="password" id="pass" placeholder="Contraseña" onkeypress="if(event.key==='Enter') login()">
-        <button onclick="verPass()">👁️</button>
+        <div class="input-group">
+    <input type="password" id="pass" placeholder="Contraseña" onkeypress="if(event.key==='Enter') login()">
+    <span class="toggle-password" onclick="verPass()">Ver</span>
+</div>
         <button onclick="login()">Ingresar</button>
         <p id="error" style="color:red;"></p>
     </div>
@@ -245,11 +270,14 @@ fetch("datos.json")
 
 function verPass(){
     let pass = document.getElementById("pass");
+    let texto = document.querySelector(".toggle-password");
 
     if(pass.type === "password"){
         pass.type = "text";
+        texto.textContent = "Ocultar";
     } else {
         pass.type = "password";
+        texto.textContent = "Ver";
     }
 }
 
